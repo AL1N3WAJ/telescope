@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Telescope Distribution Map — Bangladesh</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css](https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css)" />
+  <link href="[https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap](https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap)" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -58,7 +58,6 @@
       transition: background 0.3s, color 0.3s;
     }
 
-    /* Fullscreen Loading Overlay Styling */
     #loading-overlay {
       position: fixed;
       top: 0; left: 0; width: 100vw; height: 100vh;
@@ -93,7 +92,7 @@
 
     header {
       background: var(--surface);
-      border-b: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
       padding: 1.5rem 2rem;
       display: flex;
       justify-content: space-between;
@@ -207,7 +206,6 @@
       width: 40px; height: 40px; fill: var(--border);
     }
 
-    /* Refactored Content Panels */
     .panel-header {
       margin-bottom: 1.5rem;
       border-bottom: 1px dashed var(--border);
@@ -260,15 +258,28 @@
       letter-spacing: 0.05em;
       color: var(--text-muted);
       display: block;
-      margin-bottom: 0.15rem;
+      margin-bottom: 0.25rem;
     }
     .detail-value {
       font-size: 0.95rem;
       color: var(--text-h);
       font-weight: 500;
+      line-height: 1.4;
+    }
+    .multi-entry-item {
+      padding-bottom: 0.25rem;
+      border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+      margin-bottom: 0.25rem;
+    }
+    .multi-entry-item:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    body.dark-mode .multi-entry-item {
+      border-bottom-color: rgba(255, 255, 255, 0.05);
     }
 
-    /* Elegant Empty State Context Wrapper */
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
@@ -286,11 +297,8 @@
       position: relative;
       background: var(--map-bg);
     }
-    #map {
-      width: 100%; height: 100%;
-    }
+    #map { width: 100%; height: 100%; }
 
-    /* Custom Color Scale Legend Overlay */
     .leaflet-style-legend {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -322,7 +330,6 @@
       border: 1px solid rgba(0,0,0,0.15);
     }
 
-    /* Leaflet Overrides */
     .leaflet-tooltip-custom {
       background: var(--surface) !important;
       border: 1px solid var(--border-hi) !important;
@@ -380,7 +387,7 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="[https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js](https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js)"></script>
   <script>
     /**
      * NOTE FOR EXECUTION:
@@ -390,9 +397,7 @@
      */
 
     let map, geojsonLayer, currentSelectedLayer = null;
-    let mapDataGlobal = null;
 
-    // Initialization of Theme Mechanics
     const themeBtn = document.getElementById('themeBtn');
     themeBtn.addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
@@ -400,7 +405,6 @@
       themeBtn.querySelector('span').innerText = isDark ? 'Light Mode' : 'Dark Mode';
     });
 
-    // Custom Vanilla String Token Splitter for Row Level Comma Separated Variables (CSV) Parser
     function parseCSVData(text) {
       const lines = text.split(/\r?\n/);
       if (lines.length === 0) return [];
@@ -422,7 +426,15 @@
       return rows;
     }
 
-    // Dynamic Threshold Choropleth Hex Assignment Mappings
+    // Dynamic clean list renderer parsing inner semicolons
+    function formatMultiValue(val) {
+      if (!val) return 'N/A';
+      if (!val.includes(';')) return val;
+      return val.split(';')
+                .map(item => `<div class="multi-entry-item">${item.trim()}</div>`)
+                .join('');
+    }
+
     function getFeatureColor(count) {
       return count === 0 ? '#f7f4f0' :
              count === 1 ? '#dfdfba' :
@@ -443,7 +455,6 @@
       };
     }
 
-    // Dynamic Tooltip Generation Binding Contexts
     function buildMapTooltip(props) {
       const count = props.telescopeCount || 0;
       const displayString = count === 0 ? `<span class="tt-empty">No telescopes yet</span>` : `● ${count} Telescope${count !== 1 ? 's' : ''}`;
@@ -451,7 +462,6 @@
               <div class="tt-counts">${displayString}</div>`;
     }
 
-    // Render Detailed Meta Information Box UI Template Engine
     function updateInfoPanel(props) {
       const panel = document.getElementById('info-panel');
       if (!props) {
@@ -479,15 +489,15 @@
           <div class="details-grid">
             <div class="detail-item">
               <span class="detail-label">Telescope Model</span>
-              <span class="detail-value">${props.telescopeModel || 'Not Specified'}</span>
+              <div class="detail-value">${formatMultiValue(props.telescopeModel)}</div>
             </div>
             <div class="detail-item">
               <span class="detail-label">Contact Person</span>
-              <span class="detail-value">${props.contactPerson || 'N/A'}</span>
+              <div class="detail-value">${formatMultiValue(props.contactPerson)}</div>
             </div>
             <div class="detail-item">
               <span class="detail-label">Contact Number</span>
-              <span class="detail-value">${props.contactNumber || 'N/A'}</span>
+              <div class="detail-value">${formatMultiValue(props.contactNumber)}</div>
             </div>
           </div>`;
       }
@@ -508,7 +518,6 @@
         </div>`;
     }
 
-    // Interactivity Handling Functionality
     function highlightFeature(e) {
       const layer = e.target;
       layer.setStyle({
@@ -551,7 +560,6 @@
       });
     }
 
-    // Execution Core Logic Block via Promise Architecture
     Promise.all([
       fetch('bangladesh.geojson').then(res => {
         if (!res.ok) throw new Error('Failed to retrieve GeoJSON map boundary assets.');
@@ -563,16 +571,14 @@
       })
     ]).then(([geoJsonData, csvRawText]) => {
       const parsedCsvRecords = parseCSVData(csvRawText);
-      
-      // Hash table mapping for efficient O(N) linear merging execution sequences
       const recordLookupTable = {};
+      
       parsedCsvRecords.forEach(item => {
         if(item.districtName) {
           recordLookupTable[item.districtName.toLowerCase().trim()] = item;
         }
       });
 
-      // Runtime Structural Interfacing Matrix Data Merge Execution
       let totalTelescopesCount = 0;
       let targetDistrictsWithTelescopes = 0;
 
@@ -594,11 +600,9 @@
         }
       });
 
-      // Render Dashboard Structural Cards Visual Data State
       document.getElementById('stat-total').innerText = totalTelescopesCount;
       document.getElementById('stat-covered').innerText = `${targetDistrictsWithTelescopes}/64`;
 
-      // Initialization Leaflet Canvas Framework instance
       map = L.map('map', { zoomControl: false, attributionControl: false }).setView([23.685, 90.3563], 7);
       
       geojsonLayer = L.geoJSON(geoJsonData, {
@@ -608,7 +612,6 @@
 
       map.fitBounds(geojsonLayer.getBounds().pad(0.06));
 
-      // Append Custom Legend Layer Overlay onto Canvas Viewport
       const legendControl = L.control({ position: 'bottomright' });
       legendControl.onAdd = function() {
         const div = L.DomUtil.create('div', 'leaflet-style-legend');
@@ -627,7 +630,6 @@
       };
       legendControl.addTo(map);
 
-      // Disable/Drop Loading Viewport Overlay Mask Structure from DOM
       const overlayElement = document.getElementById('loading-overlay');
       overlayElement.style.opacity = '0';
       setTimeout(() => overlayElement.remove(), 400);
