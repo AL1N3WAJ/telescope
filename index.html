@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telescope Distribution Map — Bangladesh</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #f5f0e8;
+      --surface:     #faf7f2;
+      --surface2:    #f0ebe0;
+      --border:      #c8b89a;
+      --border-hi:   #a8926e;
+      --text-h:      #2c1f0e;
+      --text-b:      #5a4228;
+      --text-muted:  #8b6f4e;
+      --gold:        #b8860b;
+      --gold-light:  #fdf5e6;
+      --active-pill: #2e7d32;
+      --active-bg:   #e8f5e9;
+      --zero-pill:   #7f8c8d;
+      --zero-bg:     #f2f4f4;
+      --shadow:      rgba(44, 31, 14, 0.06);
+      --map-bg:      #ebd9be;
+    }
+
+    body.dark-mode {
+      --bg:          #12161a;
+      --surface:     #1a1f26;
+      --surface2:    #242b35;
+      --border:      #343f4e;
+      --border-hi:   #4e5e74;
+      --text-h:      #f1f2f6;
+      --text-b:      #c8d1dc;
+      --text-muted:  #8a99ad;
+      --gold:        #f39c12;
+      --gold-light:  #2c2519;
+      --active-pill: #81c784;
+      --active-bg:   #1b321f;
+      --zero-pill:   #95a5a6;
+      --zero-bg:     #2c3e50;
+      --shadow:      rgba(0, 0, 0, 0.4);
+      --map-bg:      #0f1317;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text-b);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* Fullscreen Loading Overlay Styling */
+    #loading-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: var(--bg);
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .spinner {
+      width: 50px; height: 50px;
+      border: 4px solid var(--border);
+      border-top: 4px solid var(--gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    .loading-text {
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-h);
+      font-weight: 500;
+      font-size: 1.1rem;
+      text-align: center;
+      max-width: 80%;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    header {
+      background: var(--surface);
+      border-b: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px var(--shadow);
+      z-index: 100;
+    }
+    .brand-eyebrow {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 900;
+      color: var(--text-h);
+      font-size: 1.8rem;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    .theme-toggle {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-b);
+      padding: 0.6rem 1.2rem;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+    .theme-toggle:hover {
+      border-color: var(--border-hi);
+      background: var(--surface);
+    }
+
+    .main-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      height: calc(100vh - 85px);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px var(--shadow);
+      z-index: 90;
+    }
+
+    .stats-container {
+      padding: 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-card {
+      background: var(--surface);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+    .stat-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-h);
+    }
+
+    .info-panel {
+      padding: 1.5rem;
+      flex: 1;
+    }
+    .panel-placeholder {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      text-align: center;
+      font-style: italic;
+      gap: 1rem;
+    }
+    .panel-placeholder svg {
+      width: 40px; height: 40px; fill: var(--border);
+    }
+
+    /* Refactored Content Panels */
+    .panel-header {
+      margin-bottom: 1.5rem;
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 1rem;
+    }
+    .header-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .header-main h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.75rem;
+      color: var(--text-h);
+    }
+    .badge-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .badge-pill.count-active { color: var(--active-pill); background: var(--active-bg); }
+    .badge-pill.count-zero { color: var(--zero-pill); background: var(--zero-bg); }
+    
+    .header-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .details-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .detail-item {
+      background: var(--surface2);
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      border-left: 3px solid var(--gold);
+    }
+    .detail-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 0.15rem;
+    }
+    .detail-value {
+      font-size: 0.95rem;
+      color: var(--text-h);
+      font-weight: 500;
+    }
+
+    /* Elegant Empty State Context Wrapper */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    .empty-icon {
+      width: 48px; height: 48px;
+      margin: 0 auto 0.75rem;
+      fill: var(--border);
+      display: block;
+    }
+
+    .map-container {
+      position: relative;
+      background: var(--map-bg);
+    }
+    #map {
+      width: 100%; height: 100%;
+    }
+
+    /* Custom Color Scale Legend Overlay */
+    .leaflet-style-legend {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px var(--shadow);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-b);
+      line-height: 1.4;
+    }
+    .legend-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      color: var(--text-h);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+    .legend-color {
+      width: 16px; height: 16px;
+      border-radius: 3px;
+      border: 1px solid rgba(0,0,0,0.15);
+    }
+
+    /* Leaflet Overrides */
+    .leaflet-tooltip-custom {
+      background: var(--surface) !important;
+      border: 1px solid var(--border-hi) !important;
+      border-radius: 4px !important;
+      padding: 0.5rem 0.75rem !important;
+      box-shadow: 0 4px 10px var(--shadow) !important;
+    }
+    .tt-name { font-weight: 700; color: var(--text-h); font-size: 0.9rem; margin-bottom: 0.15rem; }
+    .tt-counts { font-size: 0.8rem; color: var(--gold); font-weight: 500; }
+    .tt-empty { color: var(--text-muted); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading Map Data... Fetching geojson and csv files</div>
+  </div>
+
+  <header>
+    <div>
+      <div class="brand-eyebrow">[Your Organization Name]</div>
+      <h1>Telescope Distribution Map — Bangladesh</h1>
+      <div class="subtitle">Registered telescopes by district · Click any region to see details</div>
+    </div>
+    <button class="theme-toggle" id="themeBtn" aria-label="Toggle Dark Mode">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <span>Dark Mode</span>
+    </button>
+  </header>
+
+  <div class="main-container">
+    <div class="sidebar">
+      <div class="stats-container">
+        <div class="stat-card">
+          <span class="stat-label">Total Telescopes</span>
+          <span class="stat-val" id="stat-total">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Districts Covered</span>
+          <span class="stat-val" id="stat-covered">0/64</span>
+        </div>
+      </div>
+
+      <div class="info-panel" id="info-panel">
+        <div class="panel-placeholder">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <p>Click any region on the map to see specific telescope metadata allocation.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="map-container">
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script>
+    /**
+     * NOTE FOR EXECUTION:
+     * Due to browser Security Rules (CORS) over local filesystems, asynchronous resource fetching 
+     * cannot operate using the raw file:// pathing protocol. This file must be handled through 
+     * a local development environment instance (e.g., Live Server, Python HTTP server, or Node).
+     */
+
+    let map, geojsonLayer, currentSelectedLayer = null;
+    let mapDataGlobal = null;
+
+    // Initialization of Theme Mechanics
+    const themeBtn = document.getElementById('themeBtn');
+    themeBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      themeBtn.querySelector('span').innerText = isDark ? 'Light Mode' : 'Dark Mode';
+    });
+
+    // Custom Vanilla String Token Splitter for Row Level Comma Separated Variables (CSV) Parser
+    function parseCSVData(text) {
+      const lines = text.split(/\r?\n/);
+      if (lines.length === 0) return [];
+      
+      const headers = lines[0].split(',').map(h => h.trim());
+      const rows = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        const columns = line.split(',').map(c => c.trim());
+        const record = {};
+        headers.forEach((header, idx) => {
+          record[header] = columns[idx] || '';
+        });
+        rows.push(record);
+      }
+      return rows;
+    }
+
+    // Dynamic Threshold Choropleth Hex Assignment Mappings
+    function getFeatureColor(count) {
+      return count === 0 ? '#f7f4f0' :
+             count === 1 ? '#dfdfba' :
+             count <= 3  ? '#b3cde3' :
+             count <= 6  ? '#8c96c6' :
+             count <= 9  ? '#8856a7' :
+                           '#810f7c';
+    }
+
+    function styleFeature(feature) {
+      const count = feature.properties.telescopeCount || 0;
+      return {
+        fillColor: getFeatureColor(count),
+        weight: 1.5,
+        opacity: 1,
+        color: 'var(--border)',
+        fillOpacity: 0.85
+      };
+    }
+
+    // Dynamic Tooltip Generation Binding Contexts
+    function buildMapTooltip(props) {
+      const count = props.telescopeCount || 0;
+      const displayString = count === 0 ? `<span class="tt-empty">No telescopes yet</span>` : `● ${count} Telescope${count !== 1 ? 's' : ''}`;
+      return `<div class="tt-name">${props.districtName}</div>
+              <div class="tt-counts">${displayString}</div>`;
+    }
+
+    // Render Detailed Meta Information Box UI Template Engine
+    function updateInfoPanel(props) {
+      const panel = document.getElementById('info-panel');
+      if (!props) {
+        panel.innerHTML = `<div class="panel-placeholder">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <p>Click any region on the map to see specific telescope metadata allocation.</p>
+        </div>`;
+        return;
+      }
+
+      const count = props.telescopeCount || 0;
+      const isZero = count === 0;
+
+      let detailContent = '';
+      if (isZero) {
+        detailContent = `
+          <div class="empty-state">
+            <svg class="empty-icon" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+            </svg>
+            <p>No telescopes assigned yet</p>
+          </div>`;
+      } else {
+        detailContent = `
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Telescope Model</span>
+              <span class="detail-value">${props.telescopeModel || 'Not Specified'}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Contact Person</span>
+              <span class="detail-value">${props.contactPerson || 'N/A'}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Contact Number</span>
+              <span class="detail-value">${props.contactNumber || 'N/A'}</span>
+            </div>
+          </div>`;
+      }
+
+      panel.innerHTML = `
+        <div class="panel-header">
+          <div class="header-main">
+            <h2>${props.districtName}</h2>
+            <span class="badge-pill count-${isZero ? 'zero' : 'active'}">${count} ${count === 1 ? 'Telescope' : 'Telescopes'}</span>
+          </div>
+          <div class="header-meta">
+            <span><strong>Division:</strong> ${props.division}</span>
+            <span><strong>Area:</strong> ${props.area ? props.area.toLocaleString() : 'N/A'} km²</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          ${detailContent}
+        </div>`;
+    }
+
+    // Interactivity Handling Functionality
+    function highlightFeature(e) {
+      const layer = e.target;
+      layer.setStyle({
+        weight: 2.5,
+        color: 'var(--border-hi)',
+        fillOpacity: 0.95
+      });
+      if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+      }
+    }
+
+    function resetFeatureHighlight(e) {
+      geojsonLayer.resetStyle(e.target);
+    }
+
+    function onFeatureClick(e) {
+      const layer = e.target;
+      if (currentSelectedLayer === layer) {
+        currentSelectedLayer = null;
+        updateInfoPanel(null);
+      } else {
+        currentSelectedLayer = layer;
+        updateInfoPanel(layer.feature.properties);
+        map.fitBounds(layer.getBounds().pad(0.15));
+      }
+    }
+
+    function onEachFeature(feature, layer) {
+      layer.bindTooltip(buildMapTooltip(feature.properties), {
+        sticky: true,
+        direction: 'top',
+        className: 'leaflet-tooltip-custom',
+        offset: [0, -6]
+      });
+      layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetFeatureHighlight,
+        click: onFeatureClick
+      });
+    }
+
+    // Execution Core Logic Block via Promise Architecture
+    Promise.all([
+      fetch('bangladesh.geojson').then(res => {
+        if (!res.ok) throw new Error('Failed to retrieve GeoJSON map boundary assets.');
+        return res.json();
+      }),
+      fetch('telescopes.csv').then(res => {
+        if (!res.ok) throw new Error('Failed to retrieve Telescope data matrix asset.');
+        return res.text();
+      })
+    ]).then(([geoJsonData, csvRawText]) => {
+      const parsedCsvRecords = parseCSVData(csvRawText);
+      
+      // Hash table mapping for efficient O(N) linear merging execution sequences
+      const recordLookupTable = {};
+      parsedCsvRecords.forEach(item => {
+        if(item.districtName) {
+          recordLookupTable[item.districtName.toLowerCase().trim()] = item;
+        }
+      });
+
+      // Runtime Structural Interfacing Matrix Data Merge Execution
+      let totalTelescopesCount = 0;
+      let targetDistrictsWithTelescopes = 0;
+
+      geoJsonData.features.forEach(feature => {
+        const queryKey = (feature.properties.districtName || "").toLowerCase().trim();
+        const csvMatch = recordLookupTable[queryKey];
+
+        if (csvMatch) {
+          const tCount = parseInt(csvMatch.telescopeCount, 10) || 0;
+          feature.properties.telescopeCount = tCount;
+          feature.properties.telescopeModel = csvMatch.telescopeModel || '';
+          feature.properties.contactPerson  = csvMatch.contactPerson || '';
+          feature.properties.contactNumber  = csvMatch.contactNumber || '';
+          
+          totalTelescopesCount += tCount;
+          if (tCount > 0) targetDistrictsWithTelescopes++;
+        } else {
+          feature.properties.telescopeCount = 0;
+        }
+      });
+
+      // Render Dashboard Structural Cards Visual Data State
+      document.getElementById('stat-total').innerText = totalTelescopesCount;
+      document.getElementById('stat-covered').innerText = `${targetDistrictsWithTelescopes}/64`;
+
+      // Initialization Leaflet Canvas Framework instance
+      map = L.map('map', { zoomControl: false, attributionControl: false }).setView([23.685, 90.3563], 7);
+      
+      geojsonLayer = L.geoJSON(geoJsonData, {
+        style: styleFeature,
+        onEachFeature: onEachFeature
+      }).addTo(map);
+
+      map.fitBounds(geojsonLayer.getBounds().pad(0.06));
+
+      // Append Custom Legend Layer Overlay onto Canvas Viewport
+      const legendControl = L.control({ position: 'bottomright' });
+      legendControl.onAdd = function() {
+        const div = L.DomUtil.create('div', 'leaflet-style-legend');
+        const thresholds = [0, 1, 2, 4, 7, 10];
+        const labelText = ["None", "1", "2–3", "4–6", "7–9", "10+"];
+        
+        div.innerHTML = `<div class="legend-title">Telescopes</div>`;
+        for (let i = 0; i < thresholds.length; i++) {
+          div.innerHTML += `
+            <div class="legend-item">
+              <i class="legend-color" style="background: ${getFeatureColor(thresholds[i])}"></i>
+              <span>${labelText[i]}</span>
+            </div>`;
+        }
+        return div;
+      };
+      legendControl.addTo(map);
+
+      // Disable/Drop Loading Viewport Overlay Mask Structure from DOM
+      const overlayElement = document.getElementById('loading-overlay');
+      overlayElement.style.opacity = '0';
+      setTimeout(() => overlayElement.remove(), 400);
+
+    }).catch(error => {
+      console.error(error);
+      const textElement = document.querySelector('.loading-text');
+      if (textElement) {
+        textElement.innerHTML = `<span style="color:#c0392b; font-weight:bold;">Loading Initialization Error</span><br><br>
+        ${error.message}<br><br>
+        <small style="color:var(--text-muted);">Ensure the index.html file is running inside a Local Web Server to bypass security policies.</small>`;
+      }
+    });
+  </script>
+</body>
+</html>
